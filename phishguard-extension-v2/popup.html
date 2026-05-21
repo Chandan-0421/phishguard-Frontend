@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PhishGuard AI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 360px; min-height: 460px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a; color: #f1f5f9;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      padding: 16px 20px;
+      border-bottom: 1px solid #1e293b;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .logo {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .header-text h1 { font-size: 15px; font-weight: 700; }
+    .header-text p { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .ai-badge {
+      margin-left: auto;
+      background: #8b5cf620;
+      border: 1px solid #8b5cf640;
+      color: #a78bfa;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    /* Scanning */
+    #scanning-view { padding: 44px 20px; text-align: center; }
+    .scan-ring {
+      width: 72px; height: 72px; border-radius: 50%;
+      border: 3px solid #1e293b;
+      border-top-color: #3b82f6;
+      margin: 0 auto 20px;
+      animation: spin 1s linear infinite;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .scan-title { font-size: 16px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+    .scan-sub { font-size: 12px; color: #475569; }
+
+    /* Result */
+    #result-view { display: none; }
+
+    .verdict-banner {
+      padding: 22px 20px 18px;
+      text-align: center;
+    }
+    .verdict-banner.safe     { background: linear-gradient(160deg, #052e16 0%, #0f172a 60%); }
+    .verdict-banner.suspicious { background: linear-gradient(160deg, #431407 0%, #0f172a 60%); }
+    .verdict-banner.phishing { background: linear-gradient(160deg, #450a0a 0%, #0f172a 60%); }
+    .verdict-banner.unknown  { background: linear-gradient(160deg, #1e293b 0%, #0f172a 60%); }
+
+    .verdict-emoji { font-size: 48px; display: block; margin-bottom: 10px; }
+
+    .verdict-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 14px; border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 1.2px; text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .verdict-chip.safe       { background: #22c55e20; color: #4ade80; border: 1px solid #22c55e40; }
+    .verdict-chip.suspicious { background: #f59e0b20; color: #fbbf24; border: 1px solid #f59e0b40; }
+    .verdict-chip.phishing   { background: #ef444420; color: #f87171; border: 1px solid #ef444440; }
+    .verdict-chip.unknown    { background: #6b728020; color: #9ca3af; border: 1px solid #6b728040; }
+
+    .verdict-title { font-size: 18px; font-weight: 800; margin-bottom: 7px; }
+    .verdict-title.safe       { color: #4ade80; }
+    .verdict-title.suspicious { color: #fbbf24; }
+    .verdict-title.phishing   { color: #f87171; }
+    .verdict-title.unknown    { color: #9ca3af; }
+
+    .verdict-explain { font-size: 12px; color: #94a3b8; line-height: 1.55; }
+
+    /* Confidence */
+    .conf-section { padding: 14px 20px; }
+    .conf-row { display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 7px; }
+    .conf-bar { height: 7px; background: #1e293b; border-radius: 4px; overflow: hidden; }
+    .conf-fill { height: 100%; border-radius: 4px; transition: width 0.9s ease; }
+    .conf-fill.safe       { background: linear-gradient(90deg, #16a34a, #4ade80); }
+    .conf-fill.suspicious { background: linear-gradient(90deg, #d97706, #fbbf24); }
+    .conf-fill.phishing   { background: linear-gradient(90deg, #dc2626, #f87171); }
+    .conf-fill.unknown    { background: #334155; }
+
+    .divider { height: 1px; background: #1e293b; margin: 0 20px; }
+
+    /* Warnings */
+    .warnings-section { padding: 14px 20px; }
+    .section-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: #475569; margin-bottom: 10px;
+    }
+    .warn-item {
+      display: flex; gap: 8px; align-items: flex-start;
+      background: #1e293b; border-radius: 8px;
+      padding: 9px 11px; margin-bottom: 6px;
+      font-size: 12px; color: #94a3b8; line-height: 1.4;
+    }
+    .warn-dot { font-size: 8px; color: #475569; margin-top: 3px; flex-shrink: 0; }
+
+    /* Recommendation */
+    .rec-box {
+      margin: 0 20px 14px;
+      padding: 12px 14px;
+      background: #1e293b;
+      border-left: 3px solid #3b82f6;
+      border-radius: 0 10px 10px 0;
+    }
+    .rec-label { font-size: 10px; font-weight: 700; color: #60a5fa; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+    .rec-text { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+
+    /* Bottom row */
+    .bottom-row {
+      display: flex; gap: 10px;
+      padding: 0 20px 14px;
+    }
+    .rescan-btn {
+      flex: 1; padding: 10px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      color: #64748b;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .rescan-btn:hover { background: #334155; color: #94a3b8; }
+
+    /* Meta */
+    .meta-row {
+      display: flex; justify-content: space-between;
+      padding: 8px 20px 14px;
+      font-size: 10px; color: #334155;
+      border-top: 1px solid #1e293b;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">🛡️</div>
+    <div class="header-text">
+      <h1>PhishGuard AI</h1>
+      <p>Real-Time Phishing Detector</p>
+    </div>
+    <div class="ai-badge">⚡ Llama 3</div>
+  </div>
+
+  <!-- Scanning -->
+  <div id="scanning-view">
+    <div class="scan-ring">🔍</div>
+    <div class="scan-title">Analyzing Page...</div>
+    <div class="scan-sub">AI + NLP + ML detection in progress</div>
+  </div>
+
+  <!-- Result -->
+  <div id="result-view">
+    <div class="verdict-banner" id="verdict-banner">
+      <span class="verdict-emoji" id="verdict-emoji"></span>
+      <div class="verdict-chip" id="verdict-chip"></div>
+      <div class="verdict-title" id="verdict-title"></div>
+      <div class="verdict-explain" id="verdict-explain"></div>
+    </div>
+
+    <div class="conf-section">
+      <div class="conf-row">
+        <span>AI Confidence Score</span>
+        <span id="conf-val">0%</span>
+      </div>
+      <div class="conf-bar">
+        <div class="conf-fill" id="conf-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="warnings-section">
+      <div class="section-label">⚡ Detected Signals</div>
+      <div id="warnings-list"></div>
+    </div>
+
+    <div class="rec-box" id="rec-box" style="display:none">
+      <div class="rec-label">💡 Recommendation</div>
+      <div class="rec-text" id="rec-text"></div>
+    </div>
+
+    <div class="bottom-row">
+      <button class="rescan-btn" id="rescan-btn">🔄 Re-scan Page</button>
+    </div>
+
+    <div class="meta-row">
+      <span id="meta-time">—</span>
+      <span id="meta-model">—</span>
+    </div>
+  </div>
+
+  <script src="src/popup.js"></script>
+</body>
+</html>
